@@ -3,6 +3,7 @@ package academy.backend.market_pulse.cli;
 import academy.backend.market_pulse.client.TInvestApiClient;
 import academy.backend.market_pulse.client.InterruptibleTInvestApiClient;
 import academy.backend.market_pulse.concurrent.QuoteSubscriptionService;
+import academy.backend.market_pulse.dto.subscription.PoolType;
 import academy.backend.market_pulse.dto.subscription.SubscriptionConfig;
 import academy.backend.market_pulse.dto.subscription.SubscriptionRequest;
 import academy.backend.market_pulse.dto.subscription.SubscriptionResult;
@@ -33,6 +34,10 @@ public final class SubscriptionsCommand implements Callable<Integer> {
     @Option(names = "--workers", defaultValue = "3", description = "Количество платформенных worker-потоков")
     private int workers;
 
+    @Option(names = "--pool", defaultValue = "queue",
+            description = "Пул worker-потоков: queue (FIFO, LinkedBlockingQueue) или treiber (LIFO, стек Трайбера)")
+    private String pool;
+
     public SubscriptionsCommand(TInvestApiClient client) {
         this.client = client;
     }
@@ -44,7 +49,7 @@ public final class SubscriptionsCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try {
-            SubscriptionConfig config = new SubscriptionConfig(workers);
+            SubscriptionConfig config = new SubscriptionConfig(workers, PoolType.parse(pool));
             // NOTICE: нужен контракт отмены, а не конкретная реализация HTTP-клиента.
             if (!(client instanceof InterruptibleTInvestApiClient interruptibleClient)) {
                 throw new IllegalArgumentException("Для subscriptions нужен прерываемый клиент; "

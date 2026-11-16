@@ -154,6 +154,28 @@ class SubscriptionsCommandTest {
                         || thread.getName().startsWith("quote-worker-")));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"queue", "TREIBER"})
+    void bothPoolImplementationsRunASession(String pool) {
+        System.setIn(new ByteArrayInputStream("exit\n".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(0, new CommandLine(new SubscriptionsCommand(mock(InterruptibleTInvestApiClient.class)))
+                .execute("--pool", pool));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("Подписки и пул остановлены"));
+    }
+
+    @Test
+    void unknownPoolIsRejectedBeforeReadingCommands() {
+        var input = new ByteArrayInputStream("exit\n".getBytes(StandardCharsets.UTF_8));
+        System.setIn(input);
+
+        assertEquals(2, new CommandLine(new SubscriptionsCommand(mock(InterruptibleTInvestApiClient.class)))
+                .execute("--pool", "forkjoin"));
+
+        assertTrue(errors.toString(StandardCharsets.UTF_8).contains("Неизвестный тип пула"));
+        assertEquals(5, input.available());
+    }
+
     @Test
     void interruptedShutdownReturns130AndPreservesInterrupt() {
         System.setIn(new ByteArrayInputStream(new byte[0]));
