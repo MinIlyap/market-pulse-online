@@ -10,7 +10,7 @@ import java.util.function.Consumer;
  * Close вызывается владельцем после остановки всех producer; конкурентные submit и close не поддерживаются.
  * Interrupt во время idle-ожидания завершает worker; отмена выполняемой задачи не завершает worker.
  */
-public final class TreiberThreadPool implements AutoCloseable {
+public final class TreiberThreadPool implements TaskPool {
     private static final System.Logger LOGGER = System.getLogger(TreiberThreadPool.class.getName());
     /**
      * Стек ожидающих задач; при close оставшиеся задачи отбрасываются.
@@ -48,6 +48,7 @@ public final class TreiberThreadPool implements AutoCloseable {
     /**
      * Передаёт задачу worker-потокам; после close отклоняет её.
      */
+    @Override
     public void submit(Runnable task) {
         if (stopped) {
             throw new IllegalStateException("Пул закрыт");
